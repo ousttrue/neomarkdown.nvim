@@ -31,6 +31,10 @@ lazy
 ```lua
 {
   "ousttrue/neomarkdown.nvim",
+  dependencies = {
+    "uga-rosa/utf8.nvim",
+    "nvim-lua/plenary.nvim",
+  },
   opts = {},
 },
 ```

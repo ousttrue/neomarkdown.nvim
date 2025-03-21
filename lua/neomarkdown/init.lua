@@ -8,6 +8,10 @@ local M = {}
 ---@param opts neomarkdown.Params?
 function M.setup(opts)
   opts = opts or {}
+
+  --
+  -- BufReadCmd
+  --
   opts.curl_command = opts.curl_command
       or {
         "curl",
@@ -26,6 +30,25 @@ function M.setup(opts)
       bufread.on_bufreadcmd(ev.buf, ev.file, opts)
     end,
   })
+
+  --
+  -- LanguageServer
+  --
+  local LanguageServer = require "neomarkdown.LanguageServer"
+  vim.api.nvim_create_autocmd("FileType", {
+    pattern = { "markdown" },
+    callback = function()
+      LanguageServer.launch()
+    end,
+  })
+  vim.api.nvim_create_user_command("MdlsLaunch", function()
+    LanguageServer.launch()
+  end, {})
+
+  local Logger = require "neomarkdown.Logger"
+  vim.api.nvim_create_user_command("LlsLog", function()
+    vim.cmd(string.format("edit %s", Logger.get_log_path()))
+  end, {})
 end
 
 return M
