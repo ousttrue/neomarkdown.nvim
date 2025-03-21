@@ -1,46 +1,5 @@
 local utf8 = require "utf8"
--- local ts_utils = require "nvim-treesitter.ts_utils"
-
----@param node TSNode?
----@return TSNode?
-local function get_link_destination(node)
-  if not node then
-    return
-  end
-
-  local node_type = node:type()
-  if node_type == "link_destination" then
-    return node
-  end
-
-  if node_type == "link_text" then
-    local parent = node:parent()
-    if parent then
-      for i = 0, parent:named_child_count() - 1 do
-        local child = parent:named_child(i)
-        if child then
-          if child:type() == "link_destination" then
-            return child
-          end
-        end
-      end
-    end
-  end
-
-  if node_type == "inline_link" then
-    local parent = node
-    for i = 0, parent:named_child_count() - 1 do
-      local child = parent:named_child(i)
-      if child then
-        if child:type() == "link_destination" then
-          return child
-        end
-      end
-    end
-  end
-
-  print("get_link_destination: link_destination not found", node:type())
-end
+local utils = require "neomarkdown.utils"
 
 ---@param uri string
 ---@return string?
@@ -162,7 +121,7 @@ function Workspace:lsp_definition(params)
   }
   local dst
   if node then
-    local link_dst = get_link_destination(node)
+    local link_dst = utils.get_link_destination(node)
     if link_dst then
       dst = vim.treesitter.get_node_text(link_dst, bufnr)
     elseif node:type() == "inline" then
@@ -183,13 +142,13 @@ function Workspace:lsp_definition(params)
     local uri = make_uri(self.root_dir, dir, dst)
     if uri then
       return nil,
-        {
-          uri = uri,
-          range = {
-            start = { line = 0, character = 0 },
-            ["end"] = { line = 0, character = 0 },
-          },
-        }
+          {
+            uri = uri,
+            range = {
+              start = { line = 0, character = 0 },
+              ["end"] = { line = 0, character = 0 },
+            },
+          }
     else
       print("not found", dir, dst)
     end
