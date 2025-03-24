@@ -1,69 +1,9 @@
----@type table<string, {prefix:string?, start_newline: boolean?, end_newline:boolean?}>
-local BLOCK_PREFIX_MAP = {
-  title = { prefix = "# ", start_newline = true, end_newline = true },
-  h1 = { prefix = "# ", start_newline = true, end_newline = true },
-  h2 = { prefix = "## ", start_newline = true, end_newline = true },
-  h3 = { prefix = "### ", start_newline = true, end_newline = true },
-  h4 = { prefix = "#### ", start_newline = true, end_newline = true },
-  h5 = { prefix = "##### ", start_newline = true, end_newline = true },
-  h6 = { prefix = "###### ", start_newline = true, end_newline = true },
-  p = {},
-  div = {},
-  tr = {},
-  thead = {},
-  table = {},
-  tbody = {},
-  br = { end_newline = true },
-  from = {},
-  ul = {},
-  ol = {},
-  li = { prefix = "- " },
-  article = { end_newline = true },
-  hr = { prefix = "---", end_newline = true },
-}
-
-local INLINE_PREFIX_MAP = {
-  td = { prefix = "|" },
-  th = { prefix = "|" },
-  html = {},
-  head = {},
-  meta = {},
-  body = {},
-  header = {},
-  link = {},
-  noscript = {},
-  img = {},
-  span = {},
-  input = {},
-  button = {},
-  nav = {},
-  main = {},
-  section = {},
-  aside = {},
-  footer = {},
-  cite = {},
-  time = { prefix = " `", suffix = "` " },
-  code = { prefix = " `", suffix = "` " },
-  strong = { prefix = " `", suffix = "` " },
-  small = { prefix = " `", suffix = "` " },
-  b = { prefix = " `", suffix = "` " },
-  figcaption = { prefix = " `", suffix = "` " },
-  address = {},
-  template = {},
-  i = {},
-  u = {},
-  font = {},
-  center = {},
-  ins = {},
-  figure = {},
-  label = {},
-}
+local html = require "neomarkdown.html"
 
 ---@class PushLine
 ---@field lines string[]
 ---@field src string
 ---@field texts string[]
----@field elements HtmlElement[]
 local PushLine = {}
 PushLine.__index = PushLine
 
@@ -120,51 +60,54 @@ end
 
 function PushLine:start_tag(text, closing)
   assert(type(text) == "string")
-  local tag = text:match "^<(%w+)"
-  assert(tag)
-  tag = tag:lower()
-  local block = BLOCK_PREFIX_MAP[tag]
-  local inline = INLINE_PREFIX_MAP[tag]
+  local tag_name = text:match "^<(%w+)"
+  assert(tag_name)
+  tag_name = tag_name:lower()
 
-  if block then
-    self:flush_texts()
-    if block.start_newline then
-      self:newline()
-    end
-    if block.prefix and #block.prefix > 0 then
-      table.insert(self.texts, block.prefix)
-    end
-  elseif inline then
-    if inline.prefix and #inline.prefix > 0 then
-      table.insert(self.texts, inline.prefix)
+  local tag = html.tags[tag_name]
+  if tag then
+    if tag.is_block then
+      self:flush_texts()
+      if tag.start_newline then
+        self:newline()
+      end
+      if tag.prefix and #tag.prefix > 0 then
+        table.insert(self.texts, tag.prefix)
+      end
+    else
+      if tag.prefix then
+        table.insert(self.texts, tag.prefix)
+      end
     end
   else
-    if closing then
-      table.insert(self.texts, "<" .. tag .. "/>")
-    else
-      table.insert(self.texts, "<" .. tag .. ">")
-    end
+    -- if closing then
+    --   table.insert(self.texts, "<" .. tag_name .. "/>")
+    -- else
+    --   table.insert(self.texts, "<" .. tag_name .. ">")
+    -- end
   end
 end
 
 function PushLine:end_tag(text)
   assert(type(text) == "string")
-  local tag = text:match "^<(%w+)"
-  assert(tag)
-  tag = tag:lower()
-  local block = BLOCK_PREFIX_MAP[tag]
-  local inline = INLINE_PREFIX_MAP[tag]
-  if block then
-    self:flush_texts()
-    if block.end_newline then
-      self:newline()
-    end
-  elseif inline then
-    if inline.suffix and #inline.suffix > 0 then
-      table.insert(self.texts, inline.suffix)
+  local tag_name = text:match "^<(%w+)"
+  assert(tag_name)
+  tag_name = tag_name:lower()
+
+  local tag = html.tags[tag_name]
+  if tag then
+    if tag.is_block then
+      self:flush_texts()
+      if tag.end_newline then
+        self:newline()
+      end
+    else
+      if tag.suffix then
+        table.insert(self.texts, tag.suffix)
+      end
     end
   else
-    table.insert(self.texts, "</" .. tag .. ">")
+    -- table.insert(self.texts, "</" .. tag_name .. ">")
   end
 end
 

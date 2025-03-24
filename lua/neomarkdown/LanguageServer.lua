@@ -133,9 +133,11 @@ function LanguageServer:_handle(method, params)
       self.dispatchers.on_exit(0, 0)
     end
   else
-    local request_method = self.request_map[method]
-    if request_method then
-      return request_method(params)
+    if not self.stopped then
+      local request_method = self.request_map[method]
+      if request_method then
+        return request_method(params)
+      end
     end
   end
 end

@@ -25,7 +25,7 @@ end
 ---@param dir string
 ---@param dst string
 local function make_uri(root_dir, dir, dst)
-  if dst:find "^https?://" then
+  if dst:find "^.-:" then
     return dst
   end
 
